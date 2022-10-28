@@ -13,11 +13,15 @@
 (define (read in) (syntax->datum (read-syntax #f in)))
 
 (define (read-syntax src in)
-  (syntax-parse (shrubbery:read-syntax src in)
+  (define stx (shrubbery:read-syntax src in))
+  (syntax-parse stx
     #:datum-literals (module racket/base quote top)
     [(module name racket/base (quote (top input ...)))
      #:with (output ...) (groups-unnwraith-syntaxes (attribute input))
-     #'(module name racket/base (quote (top output ...)))]
+     (restx1 stx `(module ,#'name 'racket/base (quote (top ,@(attribute output)))))]
     [(module name lang (top input ...))
      #:with (output ...) (groups-unnwraith-syntaxes (attribute input))
-     #'(module name lang output ...)]))
+     (restx1 stx `(module ,#'name ,#'lang ,@(attribute output)))]))
+
+(define (restx1 src dat)
+  (datum->syntax src dat src src))
