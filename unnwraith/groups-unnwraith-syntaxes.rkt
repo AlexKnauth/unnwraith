@@ -160,7 +160,28 @@
        (map term-unnwraith-syntax (attribute a))
        (groups-unnwraith-syntaxes (attribute b.group)))
       #:parens parens
+      #:group s)]
+    [(group a:simple-term ... b:alts)
+     (group-unnwraith-results
+      (append
+       (map term-unnwraith-syntax (attribute a))
+       (alts-unnwraith-syntaxes #'b))
+      #:parens parens
       #:group s)]))
+
+;; alts-unnwraith-syntax : Syntax -> (Listof Syntax)
+(define (alts-unnwraith-syntaxes s)
+  (syntax-parse s
+    #:datum-literals (alts)
+    [(alts b:block ...)
+     (map alt-unnwraith-syntax (attribute b))]))
+
+;; alt-unnwraith-syntax : Syntax -> Syntax
+(define (alt-unnwraith-syntax s)
+  (syntax-parse s
+    #:datum-literals (block)
+    [(block a ...)
+     (restx1 s (groups-unnwraith-syntaxes (attribute a)))]))
 
 ;; term-unnwraith-syntax : Syntax -> Syntax
 (define/contract (term-unnwraith-syntax s)
