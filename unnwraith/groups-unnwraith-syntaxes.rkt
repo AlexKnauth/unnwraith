@@ -31,7 +31,8 @@
 
 (define-syntax-class op
   #:attributes (id)
-  #:datum-literals (op)
+  #:datum-literals (op $)
+  (pattern (op $) #:with id (restx1 this-syntax 'unsyntax))
   (pattern (op id)))
 
 (define-syntax-class block
@@ -134,6 +135,14 @@
   (->* (syntax?) (#:parens (or/c #f syntax?)) (listof syntax?))
   (syntax-parse s
     #:datum-literals (group)
+    [(group o:op a:simple-term ...+)
+     (list
+      (restx1
+       (or parens s)
+       (cons
+        #'o.id
+        (shmushed-group-unnwraith-syntaxes
+         (restx1 s (cons 'group (attribute a)))))))]
     [(group a:simple-term ...+ {~seq o:op b:simple-term ...+} ...+)
      #:with o-id (first (attribute o.id))
      (unless (for/and [(other (in-list (rest (attribute o.id))))]
@@ -187,7 +196,7 @@
 (define/contract (term-unnwraith-syntax s)
   (-> syntax? syntax?)
   (syntax-parse s
-    #:datum-literals (parens)
+    #:datum-literals (parens brackets quotes)
     [(parens) (restx1 s '())]
     [(parens a)
      (define lst (group-unnwraith-syntaxes #'a #:parens s))
@@ -201,6 +210,11 @@
      (unless (and (pair? lst) (empty? (rest lst)))
        (error 'bad))
      (first lst)]
+    [(quotes a)
+     (define lst (group-unnwraith-syntaxes #'a))
+     (unless (and (pair? lst) (empty? (rest lst)))
+       (error 'bad))
+     (restx1 s (list 'quasisyntax (first lst)))]
     [_ s]))
 
 ;; group-unnwraith-results : (Listof Syntax) -> (Listof Syntax)
