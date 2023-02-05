@@ -11,7 +11,7 @@ syntax-parse stx1
   check-equal? (symbol->string (syntax-e 'y')) "b"
   check-equal? (symbol->string (syntax-e 'z')) "c"
 
-define stx2 'd e ($ stx1)'
+define stx2 'd e $stx1'
 
 syntax-parse stx2
 | u v w

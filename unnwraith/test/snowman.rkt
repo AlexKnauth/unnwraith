@@ -11,27 +11,27 @@ require pict
 
 define left-arm:
   colorize:
-    text "Y" (quote (bold)) 30:
+    text "Y" #'(bold) 30:
          pi * .5
     "brown"
 
 define right-arm:
   colorize:
-    text "Y" (quote (bold)) 30:
+    text "Y" #'(bold) 30:
          pi * 1.5
     "brown"
 
 define head:
   cc-superimpose:
     disk 50 ~color "white"
-    text ":^D" (quote (bold)) 20:
+    text ":^D" #'(bold) 20:
          pi * 1.5
 
 define body:
   hc-append: left-arm
              cc-superimpose:
                disk 65 ~color "white"
-               text "* * *" (quote (bold)) 15:
+               text "* * *" #'(bold) 15:
                  pi * .5
              right-arm
 

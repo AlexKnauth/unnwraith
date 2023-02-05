@@ -6,6 +6,7 @@
 (require racket/contract
          racket/function
          racket/list
+         racket/match
          racket/string
          racket/syntax
          syntax/parse
@@ -29,11 +30,21 @@
 (define (restx1 src dat)
   (datum->syntax src dat src src))
 
+(define-syntax-class op/shmushable
+  #:attributes (id)
+  #:datum-literals (op $ |#'|)
+  (pattern (op {~and id {~not {~or $ |#'|}}})))
+
+(define-syntax-class op/tight-prefix
+  #:attributes (id)
+  #:datum-literals (op $ |#'|)
+  (pattern (op $) #:with id (restx1 this-syntax 'unsyntax))
+  (pattern (op |#'|) #:with id (restx1 this-syntax 'quote)))
+
 (define-syntax-class op
   #:attributes (id)
-  #:datum-literals (op $)
-  (pattern (op $) #:with id (restx1 this-syntax 'unsyntax))
-  (pattern (op id)))
+  (pattern :op/shmushable)
+  (pattern :op/tight-prefix))
 
 (define-syntax-class block
   #:datum-literals (block)
@@ -48,7 +59,7 @@
 
 (define-syntax-class shmushable
   (pattern :id)
-  (pattern :op)
+  (pattern :op/shmushable)
   (pattern :keyword))
 
 ;; syntax-end : Syntax -> PosInt
@@ -96,7 +107,7 @@
 (define (shmushables-shmush shmushing end)
   (syntax-parse shmushing
     [(a) #'a]
-    [(:op ...+)
+    [(:op/shmushable ...+)
      (restx1
       (update-syntax-end (first shmushing) end)
       `(op ,(string->symbol (shmushables-string shmushing))))]
@@ -116,14 +127,35 @@
 (define (shmushable-first-string s)
   (syntax-parse s
     [x:id (symbol->string (syntax-e #'x))]
-    [o:op (symbol->string (syntax-e #'o.id))]
+    [o:op/shmushable (symbol->string (syntax-e #'o.id))]
     [k:keyword (keyword->string (syntax-e #'k))]))
 
 (define (shmushable-rest-string s)
   (syntax-parse s
     [x:id (symbol->string (syntax-e #'x))]
-    [o:op (symbol->string (syntax-e #'o.id))]
+    [o:op/shmushable (symbol->string (syntax-e #'o.id))]
     [k:keyword (string-append "~" (keyword->string (syntax-e #'k)))]))
+
+;; group-tight-prefix-ops : Syntax -> Syntax
+(define/contract (group-tight-prefix-ops s)
+  (-> syntax? syntax?)
+  (syntax-parse s
+    #:datum-literals (group)
+    [(group :op/tight-prefix _) s]
+    [(group . as)
+     (restx1 s (cons 'group (terms-tight-prefix-ops #'as)))]))
+
+;; terms-tight-prefix-ops : List List ??? SyntaxList -> SyntaxList
+(define (terms-tight-prefix-ops s)
+  (syntax-parse s
+    [() '()]
+    [(o:op/tight-prefix . a-rst)
+     (match-define (cons a rst) (terms-tight-prefix-ops #'a-rst))
+     (define src (update-syntax-end #'o (syntax-end a)))
+     (cons (restx1 src (list 'parens (restx1 src (list 'group #'o a))))
+           rst)]
+    [(a . rst)
+     (cons #'a (terms-tight-prefix-ops #'rst))]))
 
 ;; group-unnwraith-syntaxes : Syntax -> (Listof Syntax)
 (define/contract (group-unnwraith-syntaxes s #:parens [parens #f])
@@ -133,7 +165,7 @@
 ;; shmushed-group-unnwraith-syntaxes : Syntax -> (Listof Syntax)
 (define/contract (shmushed-group-unnwraith-syntaxes s #:parens [parens #f])
   (->* (syntax?) (#:parens (or/c #f syntax?)) (listof syntax?))
-  (syntax-parse s
+  (syntax-parse (group-tight-prefix-ops s)
     #:datum-literals (group)
     [(group o:op a:simple-term ...+)
      (list
@@ -239,4 +271,29 @@
         #,(update-source-location #'(op -) #:position 2 #:span 1)
         #,(update-source-location #'y #:position 3 #:span 1)
         #,(update-source-location #'z #:position 5 #:span 1))))
-   '(group x-y z)))
+   '(group x-y z))
+
+  (check-equal?
+   (syntax->datum
+    (group-shmush
+     #`(group
+        #,(update-source-location #'x #:position 1 #:span 1)
+        #,(update-source-location #'(op $) #:position 2 #:span 1)
+        #,(update-source-location #'y #:position 3 #:span 1)
+        #,(update-source-location #'z #:position 5 #:span 1))))
+   '(group x (op $) y z))
+
+  (check-equal?
+   (syntax->datum
+    (group-shmush
+     #`(group
+        #,(update-source-location #'x #:position 1 #:span 1)
+        #,(update-source-location #'(op |#'|) #:position 2 #:span 2)
+        #,(update-source-location #'y #:position 4 #:span 1)
+        #,(update-source-location #'z #:position 6 #:span 1))))
+   '(group x (op |#'|) y z))
+
+  (check-equal?
+   (syntax->datum
+    (group-tight-prefix-ops #`(group x (op |#'|) y z)))
+   '(group x (parens (group (op |#'|) y)) z)))

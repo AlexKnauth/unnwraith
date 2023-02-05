@@ -4,7 +4,7 @@ define (add-drawing p):
   define drawer: make-pict-drawer p
   new canvas%:
     parent: f
-    style: quote (border)
+    style: #'(border)
     paint-callback:
       lambda (self dc):
         drawer dc 0 0
@@ -49,7 +49,7 @@ define (greeter2 name):
                  name]:
     displayln to-say
 
-for [pet: quote ("cat" "dog" "horse")]:
+for [pet: #'("cat" "dog" "horse")]:
   printf "I love my ~a!\n" pet
 
 define (counting-letters-song letters):
