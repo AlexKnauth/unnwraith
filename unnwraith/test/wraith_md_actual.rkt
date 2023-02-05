@@ -2,7 +2,7 @@
 
 define (add-drawing p):
   define drawer: make-pict-drawer p
-  new canvas% :
+  new canvas%:
     parent: f
     style: quote (border)
     paint-callback:
