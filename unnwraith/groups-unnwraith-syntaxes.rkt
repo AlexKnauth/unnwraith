@@ -30,6 +30,9 @@
 (define (restx1 src dat)
   (datum->syntax src dat src src))
 
+(define (ooo-str? s)
+  (and (string? s) (string-contains? s "...")))
+
 (define-syntax-class op/shmushable
   #:attributes (id)
   #:datum-literals (op $ |#'|)
@@ -106,11 +109,13 @@
 
 (define (shmushables-shmush shmushing end)
   (syntax-parse shmushing
-    [(a) #'a]
     [(:op/shmushable ...+)
+     (define str (shmushables-string shmushing))
      (restx1
       (update-syntax-end (first shmushing) end)
-      `(op ,(string->symbol (shmushables-string shmushing))))]
+      (cond
+        [(ooo-str? str) (string->symbol str)]
+        [else `(op ,(string->symbol str))]))]
     [(:keyword . _)
      (restx1
       (update-syntax-end (first shmushing) end)
@@ -263,6 +268,24 @@
               rs))]))
 
 (module+ test
+  (check-equal?
+   (syntax->datum
+    (shmushables-shmush
+     (list
+      (update-source-location (quote-syntax (op ...)) #:position 3 #:span 3))
+     6))
+   '...)
+
+  (check-equal?
+   (syntax->datum
+    (group-shmush
+     #`(group
+        #,(update-source-location #'x #:position 1 #:span 1)
+        #,(update-source-location (quote-syntax (op ...)) #:position 3 #:span 3)
+        #,(update-source-location #'y #:position 7 #:span 1)
+        #,(update-source-location #'z #:position 9 #:span 1))))
+   '(group x ... y z))
+  
   (check-equal?
    (syntax->datum
     (group-shmush
