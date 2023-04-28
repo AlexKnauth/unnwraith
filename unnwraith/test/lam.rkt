@@ -28,8 +28,8 @@ define (parse stx):
     If (parse 'i') (parse 't') (parse 'e')
   | f a
     App (parse 'f') (parse 'a')
-  | f a #{...+} b
-    App (parse 'f a #{...}') (parse 'b')
+  | f a ...+ b
+    App (parse 'f a ...') (parse 'b')
     
 
 define (cmp exp):
