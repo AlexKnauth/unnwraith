@@ -11,7 +11,8 @@ struct Lam [x, b] ~transparent
 struct If [i, t, e] ~transparent
 
 define (parse stx):
-  syntax-parse stx ~datum-literals [λ, if]
+  syntax-parse stx:
+    ~datum-literals [λ, if]
   | n
     ~declare n number
     Val (syntax-e 'n')

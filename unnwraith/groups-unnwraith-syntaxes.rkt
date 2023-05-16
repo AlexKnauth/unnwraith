@@ -213,6 +213,14 @@
        (map term-unnwraith-syntax (attribute a))
        (alts-unnwraith-syntaxes #'b))
       #:parens parens
+      #:group s)]
+    [(group a:simple-term ... b1:block b2:alts)
+     (group-unnwraith-results
+      (append
+       (map term-unnwraith-syntax (attribute a))
+       (groups-unnwraith-syntaxes (attribute b1.group))
+       (alts-unnwraith-syntaxes #'b2))
+      #:parens parens
       #:group s)]))
 
 ;; alts-unnwraith-syntax : Syntax -> (Listof Syntax)
