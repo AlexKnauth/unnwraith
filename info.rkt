@@ -6,5 +6,6 @@
   '("base"
     "rhombus-prototype"
     "lang-file-lib"
+    "lazy"
     "pict-lib"
     "rackunit-lib"))
