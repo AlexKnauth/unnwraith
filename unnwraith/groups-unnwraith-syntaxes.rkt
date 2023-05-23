@@ -63,7 +63,8 @@
 (define-syntax-class shmushable
   (pattern :id)
   (pattern :op/shmushable)
-  (pattern :keyword))
+  (pattern :keyword)
+  (pattern :number))
 
 ;; syntax-end : Syntax -> PosInt
 (define (syntax-end s)
@@ -120,6 +121,8 @@
      (restx1
       (update-syntax-end (first shmushing) end)
       (string->keyword (shmushables-string shmushing)))]
+    [(n:number)
+     #'n]
     [_
      (restx1
       (update-syntax-end (first shmushing) end)
@@ -133,13 +136,15 @@
   (syntax-parse s
     [x:id (symbol->string (syntax-e #'x))]
     [o:op/shmushable (symbol->string (syntax-e #'o.id))]
-    [k:keyword (keyword->string (syntax-e #'k))]))
+    [k:keyword (keyword->string (syntax-e #'k))]
+    [n:number (or (syntax-property #'n 'raw) (error 'bad-number))]))
 
 (define (shmushable-rest-string s)
   (syntax-parse s
     [x:id (symbol->string (syntax-e #'x))]
     [o:op/shmushable (symbol->string (syntax-e #'o.id))]
-    [k:keyword (string-append "~" (keyword->string (syntax-e #'k)))]))
+    [k:keyword (string-append "~" (keyword->string (syntax-e #'k)))]
+    [n:number (or (syntax-property #'n 'raw) (error 'bad-number))]))
 
 ;; group-tight-prefix-ops : Syntax -> Syntax
 (define/contract (group-tight-prefix-ops s)
@@ -251,7 +256,7 @@
     [(brackets g ...)
      (define lst (group-unnwraith-results
                   (groups-unnwraith-syntaxes (attribute g))
-                  #:parens s))
+                  #:parens (syntax-property s 'paren-shape #\[ )))
      (unless (and (pair? lst) (empty? (rest lst)))
        (error 'bad))
      (first lst)]
