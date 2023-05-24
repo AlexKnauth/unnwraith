@@ -79,3 +79,8 @@ module+ test:
     (thrush #{+} #{add1}) 3
     4
 
+define (g a & args): list a args
+
+module+ test:
+  check-equal? (g 1 2 3) (list 1 (list 2 3))
+
