@@ -64,3 +64,18 @@ module+ test:
   check-equal? (get-paren-shape) #{#\(}
   check-equal? [get-paren-shape] #{#\[}
 
+define (thrush & fs):
+  apply compose (reverse fs)
+
+module+ test:
+  check-equal? ((thrush #{+} #{add1}) 3) 4
+
+define:
+  thrush2 & fs
+  apply compose: reverse fs
+
+module+ test:
+  check-equal?:
+    (thrush #{+} #{add1}) 3
+    4
+

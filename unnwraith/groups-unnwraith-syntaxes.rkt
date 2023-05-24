@@ -35,8 +35,8 @@
 
 (define-syntax-class op/shmushable
   #:attributes (id)
-  #:datum-literals (op $ |#'|)
-  (pattern (op {~and id {~not {~or $ |#'|}}})))
+  #:datum-literals (op $ |#'| &)
+  (pattern (op {~and id {~not {~or $ |#'| &}}})))
 
 (define-syntax-class op/tight-prefix
   #:attributes (id)
@@ -176,7 +176,14 @@
 (define/contract (shmushed-group-unnwraith-syntaxes s #:parens [parens #f])
   (->* (syntax?) (#:parens (or/c #f syntax?)) (listof syntax?))
   (syntax-parse (group-tight-prefix-ops s)
-    #:datum-literals (group)
+    #:datum-literals (group &)
+    [(group a:simple-term ... ({~datum op} &) b:simple-term ...)
+     #:with ((a2 ...)) (shmushed-group-unnwraith-syntaxes
+                        (restx1 s (cons 'group (attribute a)))
+                        #:parens (or parens s))
+     #:with (b2) (shmushed-group-unnwraith-syntaxes
+                  (restx1 s (cons 'group (attribute b))))
+     (list (restx1 (or parens s) (append (attribute a2) (attribute b2))))]
     [(group o:op a:simple-term ...+)
      (list
       (restx1
